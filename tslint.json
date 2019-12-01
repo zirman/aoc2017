@@ -11,7 +11,10 @@
         "quotemark": [true, "single"],
         "max-classes-per-file": false,
         "object-literal-sort-keys": false,
-        "strict-boolean-expressions": true
+        "strict-boolean-expressions": true,
+        "interface-name": false,
+        "no-bitwise": false,
+        "no-empty": false
     },
     "rulesDirectory": []
 }

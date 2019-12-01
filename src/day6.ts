@@ -1,6 +1,5 @@
-import { map } from 'fp-ts/lib/Array';
 import fs from 'fs';
-import { pipe, words } from './pipes';
+import { words } from './pipes';
 
 export {};
 
@@ -22,11 +21,7 @@ fs.readFile('../input/day6.txt', 'utf8', (err, contents) => {
 
   const s: Map<string, number> = new Map<string, number>();
 
-  const a = pipe(
-    contents,
-    words,
-    map(parseInt),
-  );
+  const a = words(contents).map((x) => parseInt(x, 10));
 
   let steps = 0;
 

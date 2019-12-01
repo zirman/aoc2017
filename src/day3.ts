@@ -5,7 +5,7 @@ function edge(n: number): number {
 }
 
 function area(n: number): number {
-  return edge(n) * edge(n);
+  return edge(n) ** 2;
 }
 
 function start(n: number): [number, number] {

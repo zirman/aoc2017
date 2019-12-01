@@ -1,6 +1,5 @@
-import { map } from 'fp-ts/lib/Array';
 import fs from 'fs';
-import { lines, pipe } from './pipes';
+import { lines } from './pipes';
 export {};
 
 fs.readFile('../input/day5.txt', 'utf8', (err, contents) => {
@@ -9,11 +8,7 @@ fs.readFile('../input/day5.txt', 'utf8', (err, contents) => {
     return;
   }
 
-  let a = pipe(
-    contents,
-    lines,
-    map(parseInt),
-  );
+  let a = lines(contents).map((x) => parseInt(x, 10));
 
   let i: number = 0;
   let steps: number = 0;
@@ -27,11 +22,7 @@ fs.readFile('../input/day5.txt', 'utf8', (err, contents) => {
   console.log(steps);
 
   // Part 2
-  a = pipe(
-    contents,
-    lines,
-    map(parseInt),
-  );
+  a = lines(contents).map((x) => parseInt(x, 10));
 
   i = 0;
   steps = 0;

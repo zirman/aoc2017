@@ -1,37 +1,27 @@
-import * as Either from 'fp-ts/lib/Either';
-import * as Option from 'fp-ts/lib/Option';
 import fs from 'fs';
-import * as Parse from './parse';
+import maybe from './maybe';
+import parse, { Parser } from './parse';
 import { lines } from './pipes';
 
 export {};
 
-const parseOWhite: Parse.Parser<null> = Parse.map(Parse.parseOption(Parse.parseWhite), () => null);
-const parseName: Parse.Parser<string> = Parse.apNext(parseOWhite, Parse.parsePred((c) => c.match(/^[a-z]$/i) !== null));
-const parseWeight: Parse.Parser<number> =
-  Parse.apNext(parseOWhite, Parse.apPrev(Parse.apNext(Parse.parseChar('('), Parse.parsePosInt), Parse.parseChar(')')));
-const parseArrow: Parse.Parser<null> = Parse.apPrev(parseOWhite, Parse.parseString('->'));
-const parseComma: Parse.Parser<null> = Parse.apPrev(parseOWhite, Parse.parseChar(','));
+const parseUnsignedInt: Parser<string> = parse.while((c) => c.match(/^\d$/) !== null);
+const parseName: Parser<string> = parse.while((c) => c.match(/^[a-z]$/i) !== null);
+const parseWeight: Parser<string> = parse.string('(').apNext(parseUnsignedInt).apPrev(parse.string(')'));
+const parseArrow: Parser<string> = parse.string(' -> ');
+const parseComma: Parser<string> = parse.string(', ');
 
-const parseNode: Parse.Parser<{ name: string, weight: number, children: Option.Option<Array<string>> }> =
-  Parse.bind(
-    parseName,
-    (name) => Parse.bind(
-      parseWeight,
-      (weight) => Parse.map(
-        Parse.parseOption(
-          Parse.apNext(
-            parseArrow,
-            Parse.parseOnePlusDelimited(
-              parseName,
-              parseComma,
-            ),
-          ),
-        ),
-        (children) => ({name, weight, children}),
+const parseNode =
+  parseName.apPrev(parse.string(' ')).bind((name) =>
+    parseWeight.bind((weight) =>
+      parse.optionMaybe(parseArrow.apNext(parse.sepBy1(parseName, parseComma))).map((maybeChildren) =>
+        ({
+          name,
+          weight: parseInt(weight, 10),
+          children: maybe.joinArray(maybeChildren),
+        }),
       ),
-    ),
-  );
+    ));
 
 class Node {
   public readonly name: string;
@@ -57,15 +47,13 @@ fs.readFile('../input/day7.txt', 'utf8', (err, contents) => {
   const byChildren: Map<string, Node> = new Map<string, Node>();
 
   for (const line of lines(contents)) {
-    const res = parseNode(line.split(''), 0);
+    parseNode.parse(line).onResult(
+      ({ name, weight, children }) => {
+        const node = new Node(name, weight, [], NaN);
 
-    if (Either.isRight(res)) {
-      const n = res.right.x;
-      const node = new Node(n.name, n.weight, [], NaN);
-
-      if (Option.isSome(n.children)) {
-        for (const childName of n.children.value) {
+        for (const childName of children) {
           const child = byName.get(childName);
+
           if (child !== undefined) {
             node.children.push(child);
             byName.delete(childName);
@@ -73,16 +61,20 @@ fs.readFile('../input/day7.txt', 'utf8', (err, contents) => {
             byChildren.set(childName, node);
           }
         }
-      }
 
-      const parent = byChildren.get(node.name);
+        const parent = byChildren.get(node.name);
 
-      if (parent !== undefined) {
-        parent.children.push(node);
-      } else {
-        byName.set(node.name, node);
-      }
-    }
+        if (parent !== undefined) {
+          parent.children.push(node);
+        } else {
+          byName.set(node.name, node);
+        }
+      },
+      (i) => {
+        console.error(`parse error:\n${line}\n${' '.repeat(i) + '^'}`);
+        throw Error();
+      },
+    );
   }
 
   function initTotalWeight(node: Node): number {

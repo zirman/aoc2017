@@ -1,8 +1,5 @@
-import { filter, map, sort } from 'fp-ts/lib/Array';
-import { ordString } from 'fp-ts/lib/Ord';
 import fs from 'fs';
-import { lines, pipe, words } from './pipes';
-declare module 'fp-ts/lib/Array';
+import { lines, words } from './pipes';
 export {};
 
 fs.readFile('../input/day4.txt', 'utf8', (err, contents) => {
@@ -11,29 +8,23 @@ fs.readFile('../input/day4.txt', 'utf8', (err, contents) => {
     return;
   }
 
-  pipe(
-    contents,
-    lines,
-    map(words),
-    filter((ws) => (new Set(ws)).size === ws.length),
-    (x) => x.length,
-    (x) => console.log(`part1: ${x}`),
-  );
+  console.log(`part1: ${
+    lines(contents)
+      .map(words)
+      .filter((ws) => (new Set(ws)).size === ws.length)
+      .length
+  }`);
 
-  pipe(
-    contents,
-    lines,
-    map(words),
-    map((ws) =>
-      pipe(
-        ws,
-        map((w) => w.split('')),
-        map((cs) => sort(ordString)(cs)),
-        map((cs) => cs.join('')),
-      ),
-    ),
-    filter((ws) => (new Set(ws)).size === ws.length),
-    (x) => x.length,
-    (x) => console.log(`part2: ${x}`),
-  );
+  console.log(`part2: ${
+    lines(contents)
+      .map(words)
+      .map((ws) =>
+        ws
+          .map((w) => w.split(''))
+          .map((cs) => cs.sort())
+          .map((cs) => cs.join('')),
+      )
+      .filter((ws) => (new Set(ws)).size === ws.length)
+      .length
+  }`);
 });
